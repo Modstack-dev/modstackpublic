@@ -1,0 +1,38 @@
+# syntax=docker/dockerfile:1
+
+# Pin to a specific minor version + digest-friendly slim base for small, reproducible images.
+FROM node:20-slim AS base
+ENV NODE_ENV=production
+WORKDIR /opt/app
+
+# --- Dependencies stage -------------------------------------------------------
+# Installed separately so this layer is cached unless package*.json changes.
+FROM base AS deps
+COPY package.json package-lock.json* ./
+# Use npm ci when a lockfile exists for deterministic installs; fall back to
+# install otherwise. Only production deps are installed.
+RUN if [ -f package-lock.json ]; then \
+      npm ci --omit=dev; \
+    else \
+      npm install --omit=dev; \
+    fi \
+    && mkdir -p node_modules
+
+# --- Runtime stage ------------------------------------------------------------
+FROM base AS runtime
+
+# Copy installed modules and application source.
+COPY --from=deps /opt/app/node_modules ./node_modules
+COPY package.json server.js ./
+
+# Run as the built-in unprivileged "node" user, never as root.
+USER node
+
+EXPOSE 3000
+ENV PORT=3000
+
+# No Docker HEALTHCHECK: liveness/readiness are handled by Kubernetes probes
+# hitting the /healthz endpoint (see k8s probe example in README).
+
+# Use the exec form so the process gets PID 1 and receives signals directly.
+CMD ["node", "server.js"]
