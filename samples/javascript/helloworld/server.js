@@ -86,7 +86,9 @@ const renderHeaders = (req) => renderKvRows(Object.entries(req.headers));
 // or redaction before exposing anything sensitive.
 const renderEnv = () =>
   renderKvRows(
-    Object.entries(process.env).sort(([a], [b]) => a.localeCompare(b)),
+    Object.entries(process.env)
+      .filter(([, value]) => value !== undefined && value !== "")
+      .sort(([a], [b]) => a.localeCompare(b)),
   );
 
 // Two-tab panel (Headers / Environment variables) — CSS-only, no JS needed.
