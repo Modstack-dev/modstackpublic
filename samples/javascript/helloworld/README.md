@@ -4,17 +4,25 @@ A minimal Node.js web server that serves a page reading **"Hello World by `<name
 
 ## Routes
 
-| Path        | Description                                                                                     |
-| ----------- | ----------------------------------------------------------------------------------------------- |
-| `/`         | The greeting, with a link to the advanced page.                                                 |
-| `/advanced` | The greeting plus the caller's IP and a guessed location (city/region/country) derived from it. |
-| `/healthz`  | Health-check endpoint for Kubernetes probes (returns `200 ok`).                                 |
+| Path       | Description                                                                                         |
+| ---------- | -------------------------------------------------------------------------------------------------- |
+| `/`        | The greeting plus an "Inspect" panel. If `NAME` is unset, shows a "Next steps" guide.              |
+| `/healthz` | Health-check endpoint for Kubernetes probes (returns `200 ok`).                                     |
 
-The `/advanced` page reads the client IP from the left-most `X-Forwarded-For`
-entry (so it works behind a k8s ingress / load balancer), falling back to the
-socket address. Location is guesstimated via the free, key-less
-[ip-api.com](http://ip-api.com) service; private/loopback IPs are reported as a
-local network and lookup failures degrade gracefully.
+When `NAME` is **set**, the home page greets `Hello World by <name>` and confirms
+the configuration. When `NAME` is **unset**, it shows a warning and a designed
+"Next steps" walkthrough (create a new version → add the `NAME` configuration →
+redeploy).
+
+The "Inspect" panel has two tabs:
+
+- **Headers** — every incoming HTTP request header.
+- **Environment variables** — every variable in the process environment.
+
+> ⚠️ The Environment variables tab prints the **entire** container environment,
+> which in a real deployment can include secrets. It's here to illustrate how
+> configuration reaches the service; add an allow-list or redaction before
+> exposing anything sensitive.
 
 ## Run locally
 
@@ -26,10 +34,10 @@ NAME="Ada" npm start
 
 ## Environment variables
 
-| Variable | Default | Description                          |
-| -------- | ------- | ------------------------------------ |
-| `NAME`   | `World` | Name shown on the page.              |
-| `PORT`   | `3000`  | Port the server listens on.          |
+| Variable | Default      | Description                                                          |
+| -------- | ------------ | ------------------------------------------------------------------- |
+| `NAME`   | _(unset)_    | Name shown in the greeting. When unset, the page shows next steps.  |
+| `PORT`   | `3000`       | Port the server listens on.                                         |
 
 ## Run with Docker
 

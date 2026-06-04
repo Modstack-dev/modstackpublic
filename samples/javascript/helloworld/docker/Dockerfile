@@ -21,9 +21,10 @@ RUN if [ -f package-lock.json ]; then \
 # --- Runtime stage ------------------------------------------------------------
 FROM base AS runtime
 
-# Copy installed modules and application source.
+# Copy installed modules and application source (including brand assets).
 COPY --from=deps /opt/app/node_modules ./node_modules
 COPY package.json server.js ./
+COPY assets ./assets
 
 # Run as the built-in unprivileged "node" user, never as root.
 USER node
