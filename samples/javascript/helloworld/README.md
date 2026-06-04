@@ -1,6 +1,6 @@
 # Hello World (Node.js)
 
-A minimal Node.js web server that serves a page reading **"Hello World by `<name>`"**, where `<name>` comes from the `NAME` environment variable.
+A minimal Node.js server that serves a page reading **"Hello World by `<name>`"**, where `<name>` comes from the `NAME` environment var.
 
 ## Routes
 
