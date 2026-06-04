@@ -1,7 +1,13 @@
 import http from "node:http";
 
 const PORT = process.env.PORT || 3000;
-const NAME = process.env.NAME || "World";
+
+// NAME may be undefined / empty — we surface a helpful message when it is.
+const RAW_NAME = process.env.NAME;
+const HAS_NAME = typeof RAW_NAME === "string" && RAW_NAME.trim() !== "";
+const NAME = HAS_NAME ? RAW_NAME : null;
+const NO_NAME_MESSAGE =
+  "Environment variable name is not defined. In the next version please add a configuration with the environment variable name";
 
 const escapeHtml = (str) =>
   String(str)
@@ -11,7 +17,11 @@ const escapeHtml = (str) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
-// Resolve the real client IP. Behind a k8s ingress / load balancer the socket
+const greetingHtml = HAS_NAME
+  ? `Hello World by ${escapeHtml(NAME)}`
+  : "Hello World";
+
+// Resolve the client IP. Behind a k8s ingress / load balancer the socket
 // address is the proxy, so prefer the left-most X-Forwarded-For entry.
 const getClientIp = (req) => {
   const xff = req.headers["x-forwarded-for"];
@@ -57,6 +67,17 @@ const guessLocation = async (ip) => {
   }
 };
 
+// Render all incoming request headers as a definition list.
+const renderHeaders = (req) =>
+  Object.entries(req.headers)
+    .map(
+      ([key, value]) =>
+        `<dt>${escapeHtml(key)}</dt><dd>${escapeHtml(
+          Array.isArray(value) ? value.join(", ") : value,
+        )}</dd>`,
+    )
+    .join("\n        ");
+
 const renderPage = (body) => `<!DOCTYPE html>
 <html lang="en">
   <head>
@@ -78,7 +99,18 @@ const renderPage = (body) => `<!DOCTYPE html>
       h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
       dl { display: inline-grid; grid-template-columns: auto auto; gap: 0.25rem 1rem; text-align: left; }
       dt { color: #94a3b8; }
+      dd { margin: 0; word-break: break-all; }
       a { color: #38bdf8; }
+      h2 { font-size: 1.1rem; color: #94a3b8; margin-top: 2rem; }
+      .warn {
+        margin: 1rem auto 0;
+        max-width: 28rem;
+        padding: 0.75rem 1rem;
+        border: 1px solid #f59e0b;
+        border-radius: 0.5rem;
+        background: rgba(245, 158, 11, 0.12);
+        color: #fcd34d;
+      }
     </style>
   </head>
   <body>
@@ -100,7 +132,7 @@ const server = http.createServer(async (req, res) => {
   if (path === "/advanced") {
     const ip = getClientIp(req);
     const location = await guessLocation(ip);
-    const body = `<h1>Hello World by ${escapeHtml(NAME)}</h1>
+    const body = `<h1>${greetingHtml}</h1>
       <dl>
         <dt>Your IP</dt><dd>${escapeHtml(ip || "unknown")}</dd>
         <dt>Guessed location</dt><dd>${escapeHtml(location)}</dd>
@@ -111,8 +143,16 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (path === "/") {
-    const body = `<h1>Hello World by ${escapeHtml(NAME)}</h1>
-      <p><a href="/advanced">See advanced details &rarr;</a></p>`;
+    const warning = HAS_NAME
+      ? ""
+      : `<p class="warn">${escapeHtml(NO_NAME_MESSAGE)}</p>`;
+    const body = `<h1>${greetingHtml}</h1>
+      ${warning}
+      <p><a href="/advanced">See advanced details &rarr;</a></p>
+      <h2>Request headers</h2>
+      <dl>
+        ${renderHeaders(req)}
+      </dl>`;
     res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
     res.end(renderPage(body));
     return;
@@ -123,5 +163,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Server listening on http://0.0.0.0:${PORT} (NAME=${NAME})`);
+  console.log(
+    `Server listening on http://0.0.0.0:${PORT} (NAME=${HAS_NAME ? NAME : "<not set>"})`,
+  );
 });
