@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Pin to a specific minor version + digest-friendly slim base for small, reproducible images.
-FROM node:20-slim AS base
+FROM node:lts-bookworm-slim AS base
 ENV NODE_ENV=production
 WORKDIR /opt/app
 
