@@ -5,6 +5,17 @@ FROM node:lts-bookworm-slim AS base
 ENV NODE_ENV=production
 WORKDIR /opt/app
 
+# Update the package lists and upgrade libgnutls to the patched version
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gnutls-bin libgnutls30 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Update package lists and upgrade the OS and Perl packages
+RUN apt-get update && apt-get upgrade -y perl
+
+npm update brace-expansion
+
 # --- Dependencies stage -------------------------------------------------------
 # Installed separately so this layer is cached unless package*.json changes.
 FROM base AS deps
