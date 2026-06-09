@@ -10,5 +10,11 @@
   "engines": {
     "node": ">=20"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "brace-expansion": "^5.0.6"
+  },
+  "overrides": {
+    "brace-expansion": "^5.0.6"
+  }
 }

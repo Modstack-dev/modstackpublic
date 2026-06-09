@@ -1,20 +1,15 @@
 # syntax=docker/dockerfile:1
 
 # Pin to a specific minor version + digest-friendly slim base for small, reproducible images.
-FROM node:lts-bookworm-slim AS base
+FROM node:24-bookworm-slim AS base
 ENV NODE_ENV=production
 WORKDIR /opt/app
 
 # Update the package lists and upgrade libgnutls to the patched version
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends gnutls-bin libgnutls30 && \
+RUN apt-get update
+RUN apt-get install -y --no-install-recommends gnutls-bin libgnutls30 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-# Update package lists and upgrade the OS and Perl packages
-RUN apt-get update && apt-get upgrade -y perl
-
-RUN npm update brace-expansion
 
 # --- Dependencies stage -------------------------------------------------------
 # Installed separately so this layer is cached unless package*.json changes.
