@@ -14,7 +14,7 @@ RUN apt-get update && \
 # Update package lists and upgrade the OS and Perl packages
 RUN apt-get update && apt-get upgrade -y perl
 
-npm update brace-expansion
+RUN npm update brace-expansion
 
 # --- Dependencies stage -------------------------------------------------------
 # Installed separately so this layer is cached unless package*.json changes.
